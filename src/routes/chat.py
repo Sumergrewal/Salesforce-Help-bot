@@ -6,4 +6,4 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 @router.post("", response_model=ChatAnswer)
 def chat(req: ChatRequest):
-    return run_chat(req.session_id, req.message)
+    return run_chat(req.session_id, req.message, product=req.product)  

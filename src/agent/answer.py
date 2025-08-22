@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 from openai import OpenAI
 
 from src.agent.config import settings
@@ -14,6 +14,10 @@ def _get_client() -> OpenAI:
     return _client
 
 def _chunks_to_sources(chunks: List[Chunk]) -> List[Source]:
+    """
+    Build Source objects from the same chunks we provided to the LLM.
+    This ensures convo memory can record used_doc_ids / used_chunk_ids reliably.
+    """
     out: List[Source] = []
     for c in chunks:
         out.append(
@@ -24,22 +28,23 @@ def _chunks_to_sources(chunks: List[Chunk]) -> List[Source]:
                 section_title=c.section_title,
                 page_start=c.page_start,
                 page_end=c.page_end,
-                score=c.hybrid_score or c.vec_dist or 0.0,
+                score=(c.hybrid_score or 0.0),
             )
         )
     return out
 
-def answer_with_citations(
-    query: str,
-    chunks: List[Chunk],
-    memory_summary: Optional[str] = None,
-) -> Tuple[str, List[Source]]:
+def answer_with_citations(query: str, chunks: List[Chunk], memory_summary: str) -> Tuple[str, List[Source]]:
     """
-    Call the chat model with grounded context. Returns (answer_text, sources).
+    Build messages via prompts.build_messages(...), call OpenAI, and return
+    the model's text plus the Sources that mirror the context chunks.
     """
     client = _get_client()
-    # Trim to a safe number of passages (the caller should already have done this)
-    passages = chunks[:8]
+
+    # Trim to a safe number of passages (caller usually does this already)
+    k = getattr(settings, "TOPK_FINAL", 8)
+    passages = chunks[:k]
+
+    # messages = [ {"role":"system", SYSTEM_PROMPT}, {"role":"user", "...query + context..."} ]
     messages = build_messages(query, passages, memory_summary)
 
     resp = client.chat.completions.create(
