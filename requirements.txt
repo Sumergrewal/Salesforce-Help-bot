@@ -1,3 +1,20 @@
-# requirements.txt
-playwright==1.46.0
-tqdm>=4.66.0
+# Core API + UI
+fastapi>=0.111
+uvicorn[standard]>=0.30
+pydantic>=2.6
+streamlit>=1.36
+
+# Postgres client (psycopg3)
+psycopg[binary]>=3.1
+python-dotenv>=1.0
+
+# OpenAI SDK + tokenization
+openai>=1.30
+tiktoken>=0.7
+
+# Progress + utilities (used by ingestion scripts)
+tqdm>=4.66
+pypdf>=4.2
+
+# Optional: HTTP client (kept for future/web integrations; harmless to include)
+requests>=2.32
