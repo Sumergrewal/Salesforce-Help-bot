@@ -64,26 +64,39 @@ Conversational AI agent over the **Salesforce Help** corpus. It uses **hybrid re
 ---
 
 ## 🚀 Quickstart (with seed)
+0. **Data files - download from link and place in root directory**  
+   - link to pdfs: 
+   - link to text/json files:https://drive.google.com/drive/folders/1B2UJqWeGHNZRoayYmbKZqIRojDAH2kYA?usp=drive_link
 
-1. **Put the seed into `init/`**  
-   - `init/02_seed.sql` or `init/02_seed.sql.gz`  
-   - Or run the helper:  
-     ```bash
-     chmod +x scripts/fetch_seed.sh
-     ./scripts/fetch_seed.sh
-     ```
+1. **Download the seed into `init/`**  
+   - seed file link: https://drive.google.com/file/d/1Xumj25gDl1q3ZL1OekeRtgyvAngQDq_F/view?usp=drive_link
 
 2. **Start database (first boot will load schema + seed)**
    ```bash
    docker compose down -v              # wipes only YOUR local volume; run on first boot
    docker compose up -d db
    ```
-
-3. **Verify data**
-   ```bash
-   docker compose exec -T db psql -U sumergrewal -d sfhelp -c "SELECT COUNT(*) AS chunks FROM fsc_chunks;"
-   docker compose exec -T db psql -U sumergrewal -d sfhelp -c "SELECT COUNT(*) AS docs   FROM fsc_docs;"
+  **if db isnt populated:**
+  run: 
+  ```bash
+   python3 extract_sf_pdfs.py
+   python3 ingest_data.py
    ```
+
+3. **Verify data + run backfill_doc_meta**
+  ```bash
+    python3 backfill_doc_meta.py
+   ```
+
+  make sure to keep the docker desktop open
+  make sure venv is created and requirements are downloaded
+  ```bash
+  docker compose up --build (this will init and start)
+  ```
+  open new terminal as the above will not terminate after completion
+  ```bash
+    docker compose exec -T db psql -U sumergrewal -d sfhelp -c "SELECT COUNT(*) FROM fsc_chunks;" (for verifying if data is loaded)
+  ```
 
 4. **Create `.env`**
    ```bash
@@ -126,6 +139,9 @@ MIN_RELEVANCE=0.25
 # Retrieval boosts
 MEMORY_DOC_BOOST=0.05
 MEMORY_PRODUCT_BOOST=0.02
+
+# Where the Streamlit UI will call your API:
+API_BASE_URL='http://localhost:8000'
 ```
 
 **Knobs explained**  
