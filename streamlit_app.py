@@ -29,36 +29,35 @@ def fetch_products(api_base: str) -> list[str]:
 
 # --- Sidebar ---
 with st.sidebar:
-    st.markdown("## Settings")
-    st.write(f"**API**: {API_BASE_URL}")
-    st.write(f"**Session**: `{st.session_state.session_id}`")
+    st.markdown("### 🛠️ Settings")
 
-    # 1) Product filter (pulled from DB via /products)
+    # Advanced (collapsed) section
+    with st.expander("Advanced (API, session)", expanded=False):
+        st.write(f"**API base:** `{API_BASE_URL}`")
+        st.write(f"**Session:** `{st.session_state.session_id}`")
+
+    # Main controls
     products = fetch_products(API_BASE_URL)
-    options = ["All products"] + products if products else ["All products"]
-    sel = st.selectbox("Filter by product", options, index=0, help="Restrict retrieval to a single product area.")
+    sel = st.selectbox(
+        "Filter by product",
+        ["All products"] + products if products else ["All products"],
+        index=0,
+    )
     st.session_state.selected_product = None if sel == "All products" else sel
 
-    # New session button
-    if st.button("🔄 New session"):
+    if st.button("🔄  New session"):
         st.session_state.session_id = str(uuid.uuid4())
-        st.session_state.history = []
-        if hasattr(st, "rerun"):
-            st.rerun()
-        else:
-            st.experimental_rerun()  # for older Streamlit
+        st.session_state.history.clear()
+        (st.rerun if hasattr(st, "rerun") else st.experimental_rerun)()
 
-    st.markdown("---")
-    show_sources = st.checkbox("Show sources for assistant messages", value=True)
-    if st.session_state.selected_product:
-        st.caption(f"Filtering on **{st.session_state.selected_product}**")
+    show_sources = st.checkbox("Show sources", value=True)
 
 # --- Header ---
 st.title("Salesforce Help Agent")
 if not st.session_state.selected_product:
     st.info("Tip: you can narrow results by choosing a product in the sidebar.")
 
-st.caption("Hybrid retrieval (pgvector + FTS) with grounded answers from your Salesforce Help corpus.")
+st.caption("Grounded answers from your Salesforce Help corpus.")
 
 # --- Render chat history ---
 for turn in st.session_state.history:
@@ -119,3 +118,20 @@ if prompt:
                     score = s.get("score")
                     score_txt = f" (score: {score:.3f})" if isinstance(score, (int, float)) else ""
                     st.write(f"{i}. {title}{sect}{pages}{score_txt}")
+
+# ---------- style tweaks ----------
+st.markdown(
+    """
+<style>
+/* nicer chat bubble containers */
+.stChatMessage > div {
+    background: #262b36;
+    border-radius: 10px;
+    padding: 8px 14px;
+}
+/* tighten bullet spacing in answers */
+ul, ol { margin-bottom: 0px; }
+</style>
+    """,
+    unsafe_allow_html=True,
+)

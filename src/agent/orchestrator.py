@@ -82,9 +82,11 @@ def run_chat(session_id: str, user_text: str, product: Optional[str] = None) -> 
                 top_doc_titles = list({c.doc_title or c.doc_id for c in chunks})[:3]
                 memory_summary = _make_summary(f"{user_text} (continued)", top_doc_titles)
                 answer_text, sources = answer_with_citations(
-                    "Give a brief overview and useful pointers for this product.",
+                    "overview",  # query is ignored in overview mode
                     chunks,
                     memory_summary,
+                    mode="overview",
+                    product=chosen_product,
                 )
                 actually_filtered = chosen_product and any(getattr(c, "product", None) == chosen_product for c in chunks)
                 prefix = f"Continuing with **{chosen_product}**:\n\n" if actually_filtered else \
